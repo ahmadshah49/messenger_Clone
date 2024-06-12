@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 
 import Button from "@/app/components/Button";
@@ -9,15 +9,25 @@ import { BsGithub, BsGoogle } from "react-icons/bs";
 import axios from "axios";
 
 import { toast } from "react-hot-toast";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 type Variant = "Login" | "REGISTER";
 
 const AuthForm = () => {
+  const session = useSession();
+  const router = useRouter();
+
   // states =====================
 
   const [variant, setVariant] = useState<Variant>("Login");
   const [loading, SetLoading] = useState(false);
+
+  useEffect(() => {
+    if (session?.status === "authenticated") {
+      router.push("/users");
+    }
+  }, [session?.status, router]);
 
   // For Toogle Login or Register ====================
 
@@ -53,6 +63,12 @@ const AuthForm = () => {
     if (variant === "REGISTER") {
       axios
         .post("/api/register", data)
+        .then(() =>
+          signIn("credentials", {
+            ...data,
+            redirect: false,
+          })
+        )
         .catch(() => toast.error("Something Went Wrong!"))
         .finally(() => SetLoading(false));
     }
@@ -69,6 +85,7 @@ const AuthForm = () => {
 
           if (callback?.ok && !callback.error) {
             toast.success("Logged in!");
+            router.push("/users");
           }
         })
         .finally(() => SetLoading(false));
