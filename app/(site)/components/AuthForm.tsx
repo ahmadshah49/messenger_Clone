@@ -6,6 +6,10 @@ import Button from "@/app/components/Button";
 import Input from "@/app/components/inputs/Input";
 import AuthSocialButton from "@/app/(site)/components/AuthSocialButton";
 import { BsGithub, BsGoogle } from "react-icons/bs";
+import axios from "axios";
+
+import { toast } from "react-hot-toast";
+import { signIn } from "next-auth/react";
 
 type Variant = "Login" | "REGISTER";
 
@@ -47,10 +51,27 @@ const AuthForm = () => {
     SetLoading(true);
 
     if (variant === "REGISTER") {
-      // Axios Register
+      axios
+        .post("/api/register", data)
+        .catch(() => toast.error("Something Went Wrong!"))
+        .finally(() => SetLoading(false));
     }
+
     if (variant === "Login") {
-      // NextAuth Login
+      signIn("credentials", {
+        ...data,
+        redirect: false,
+      })
+        .then((callback) => {
+          if (callback?.error) {
+            toast.error("Invalid credentials");
+          }
+
+          if (callback?.ok && !callback.error) {
+            toast.success("Logged in!");
+          }
+        })
+        .finally(() => SetLoading(false));
     }
   };
 
@@ -58,7 +79,20 @@ const AuthForm = () => {
 
   const socialAction = (action: string) => {
     SetLoading(true);
-    // Next Auth google and Github
+
+    signIn(action, {
+      redirect: false,
+    })
+      .then((callback) => {
+        if (callback?.error) {
+          toast.error("Invalid credentials");
+        }
+
+        if (callback?.ok && !callback.error) {
+          toast.success("Logged in!");
+        }
+      })
+      .finally(() => SetLoading(false));
   };
 
   return (
